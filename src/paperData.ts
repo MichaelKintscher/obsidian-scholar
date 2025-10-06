@@ -274,3 +274,53 @@ export async function fetchSemanticScholarPaperReferences(
 		parseS2paperData(citedPaperData["citedPaper"])
 	);
 }
+
+// IEEE Xplore support.
+export async function fetchIeeeXplorePaperDataFromUrl(
+	url: string
+): Promise<StructuredPaperData> {
+
+	// Validate the URL format.
+	if (url.toLowerCase().includes("https://ieeexplore.ieee.org/document/") == false) {
+		console.log("Invalid url: " + url);
+		throw new Error("Invalid url: " + url);
+	}
+
+	const ieeeData = await makeRequestWithRetry(url);
+
+	const parser = new DOMParser();
+	const htmlDoc = parser.parseFromString(ieeeData, "text/html");
+
+	let title = htmlDoc.querySelector("h1.document-title span")?.innerHTML;
+	let abstract = htmlDoc.querySelector("div.abstract-text h2 + div")?.innerHTML;
+	let authorsSource = htmlDoc.getElementsByClassName("author-card");
+
+	let authors: string[] = [];
+	for (let i = 0; i < authorsSource.length; i++) {
+		authors.push(
+			authorsSource[i].querySelector("a span")?.innerHTML as string
+		);
+	}
+
+	// Try to grab a publication date. If none exists, use the conference date.
+	let dateSource = htmlDoc.querySelector("div.doc-abstract-pubdate")?.innerHTML;
+	if (dateSource == null) {
+		dateSource = htmlDoc.querySelector("div.doc-abstract-confdate")?.innerHTML;
+	}
+
+	let date = "undefined";
+	if (dateSource != null) {
+		date = dateSource.split("</strong>")[1];
+	}
+
+	if (title == undefined) title = "undefined";
+	if (abstract == undefined) abstract = "undefined";
+
+	return {
+		title: trimString(title),
+		authors: authors,
+		url: trimString(url),
+		publicationDate: trimString(date),
+		abstract: trimString(abstract)
+	};
+}

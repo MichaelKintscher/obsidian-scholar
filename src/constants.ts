@@ -93,6 +93,7 @@ export const SETTING_OPEN_PDF_AFTER_UPDATE_DESC = "If enabled, the PDF will be o
 export const NOTICE_RETRIEVING_ARXIV = "Retrieving paper information from arXiv API.";
 export const NOTICE_RETRIEVING_S2 = "Retrieving paper information from Semantic Scholar API.";
 export const NOTICE_DOWNLOADING_S2 = "Downloading Paper From S2";
+export const NOTICE_RETRIEVING_IEEEXPLORE = "Retrieving paper information from IEEE Xplore.";
 
 export const NOTICE_NOT_BIB_FILE = "The file you selected is not a .bib file.";
 export const NOTICE_NO_BIB_FILE_SELECTED = "No .bib file is selected. Please create one first.";

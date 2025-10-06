@@ -14,6 +14,7 @@ import {
 	fetchSemanticScholarPaperDataFromUrl,
 	searchSemanticScholar,
 	fetchSemanticScholarPaperReferences,
+	fetchIeeeXplorePaperDataFromUrl,
 } from "./paperData";
 import {
 	COMMAND_PAPER_NOTE_NAME,
@@ -35,6 +36,7 @@ import {
 	COMMAND_ADD_PAPER_PDF_NAME,
 	NOTICE_RETRIEVING_ARXIV,
 	NOTICE_RETRIEVING_S2,
+	NOTICE_RETRIEVING_IEEEXPLORE,
 	NOTICE_SEARCH_BIBTEX_NOT_FOUND,
 	NOTICE_SEARCH_BIBTEX_ERROR,
 	NOTICE_SEARCH_BIBTEX_COPIED,
@@ -1074,6 +1076,9 @@ class createNoteFromUrlModal extends Modal {
 		if (url.includes("arxiv.org")) {
 			new Notice(NOTICE_RETRIEVING_ARXIV);
 			paperFetchFunction = fetchArxivPaperDataFromUrl;
+		} else if (url.includes("ieeexplore")) {
+			new Notice(NOTICE_RETRIEVING_IEEEXPLORE)
+			paperFetchFunction = fetchIeeeXplorePaperDataFromUrl;
 		} else {
 			new Notice(NOTICE_RETRIEVING_S2);
 			paperFetchFunction = (url: string) =>
