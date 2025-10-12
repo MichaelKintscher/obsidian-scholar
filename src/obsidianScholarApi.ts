@@ -29,6 +29,10 @@ export class ObsidianScholarApi {
 			createPaperNoteFromUrl: async (url: string) => {
 				return this.createPaperNoteFromUrl(app, plugin, scholar, url);
 			},
+			// Paper creation from paper data.
+			createPaperNoteFromPaperData: async (paperData: StructuredPaperData) => {
+				return this.createPaperNoteFromPaperData(scholar, paperData);
+			},
 			// Paper library checking
 			isPaperInLibrary: async (searchParams: PaperLibrarySearchParams): Promise<PaperLibraryCheckResult> => {
 				return scholar.isPaperInLibrary(searchParams);
@@ -85,6 +89,18 @@ export class ObsidianScholarApi {
 		}
 
 		return await paperFetchFunction(url);
+	}
+
+	private static async createPaperNoteFromPaperData(
+		scholar: ObsidianScholar,
+		paperData: StructuredPaperData
+	): Promise<void> {
+		try {
+			await scholar.downloadAndSavePaperNotePDF(paperData);
+		} catch (error) {
+			console.error("Failed to create paper note:", error);
+			throw error;
+		}
 	}
 
 	/**

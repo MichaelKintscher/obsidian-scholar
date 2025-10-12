@@ -223,6 +223,14 @@ export default class ObsidianScholarPlugin extends Plugin {
 			},
 		});
 
+		this.registerObsidianProtocolHandler("scholar", async (e) => {
+
+			const parameters = e as unknown as StructuredPaperData;
+			new Notice("Hello");
+			new Notice(parameters.title);
+			this.api.createPaperNoteFromPaperData(parameters);
+		});
+
 		this.addSettingTab(new ObsidianScholarSettingTab(this.app, this));
 
 		// We want to be able to view bibtex files in obsidian
