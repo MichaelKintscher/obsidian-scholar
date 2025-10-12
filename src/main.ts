@@ -50,6 +50,11 @@ import {
 import { ObsidianScholar } from "./obsidianScholar";
 import { ObsidianScholarApi } from "./obsidianScholarApi";
 
+interface CreatePaperParameters {
+	paper: StructuredPaperData;
+	source: string;
+}
+
 // Main Plugin Entry Point
 export default class ObsidianScholarPlugin extends Plugin {
 	settings: ObsidianScholarPluginSettings;
@@ -225,10 +230,47 @@ export default class ObsidianScholarPlugin extends Plugin {
 
 		this.registerObsidianProtocolHandler("scholar", async (e) => {
 
-			const parameters = e as unknown as StructuredPaperData;
-			new Notice("Hello");
-			new Notice(parameters.title);
-			this.api.createPaperNoteFromPaperData(parameters);
+			// Parse the paper data from the URI encoding.
+			const paperObject = JSON.parse(e.paper);
+			Object.keys(paperObject).forEach((key) => {
+				paperObject[key] = decodeURIComponent(paperObject[key]);
+			});
+
+			// If the paper data does not contain all of the required fields, raise an error.
+			if (!paperObject.hasOwnProperty("title") || !paperObject.hasOwnProperty("authors") || !paperObject.hasOwnProperty("abstract")) {
+				
+				var sourceName = e.hasOwnProperty("source") ? e.source : "unkown source";
+				var missingFields =
+					paperObject.hasOwnProperty("title") ? "" : "title," +
+					paperObject.hasOwnProperty("authors") ? "" : "authors," +
+					paperObject.hasOwnProperty("abstract") ? "" : "abstract";
+				if(missingFields[missingFields.length - 1] == ",") {
+					missingFields = missingFields.substring(0, missingFields.length - 1);
+				}
+				var message = `Error - cannot import paper from "${sourceName}". Required JSON fields in "paper" parameter of URI are missing: ${missingFields}.`;
+				new Notice(`Import error from "${sourceName}" - see console for details.`);
+				console.log(message);
+			}
+
+			// Create the paper data object.
+			const paperData: StructuredPaperData = {
+				title: paperObject.title,
+				authors: paperObject.authors.split(","),
+				abstract: paperObject.abstract,
+				url: paperObject.hasOwnProperty("url") ? paperObject.url : null,
+				venue: paperObject.hasOwnProperty("venue") ? paperObject.venue : null,
+				publicationDate: paperObject.hasOwnProperty("publicationDate") ? paperObject.publicationDate : null,
+				tags: paperObject.hasOwnProperty("tags") ? paperObject.tags : null,
+				bibtex: paperObject.hasOwnProperty("bibtex") ? paperObject.bibtex : null,
+				pdfPath: paperObject.hasOwnProperty("pdfPath") ? paperObject.pdfPath : null,
+				pdfUrl: paperObject.hasOwnProperty("pdfUrl") ? paperObject.pdfUrl : null,
+				citekey: paperObject.hasOwnProperty("citekey") ? paperObject.citekey : null,
+			};
+			console.log(paperData);
+
+			// Show a notice to the user and create the paper note.
+			new Notice(`Importing "${paperData.title}" from ${e.source}...`);
+			this.api.createPaperNoteFromPaperData(paperData);
 		});
 
 		this.addSettingTab(new ObsidianScholarSettingTab(this.app, this));
