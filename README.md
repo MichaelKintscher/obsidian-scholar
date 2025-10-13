@@ -200,3 +200,83 @@ obsidian://adv-uri?eval=this.app.plugins.plugins.scholar.api.openPaper%28%7Bbibs
 ```
 
 > **Note:** The URI examples above require the [Advanced URI plugin](https://github.com/Vinzent03/obsidian-advanced-uri) to be installed and enabled. 
+
+## URI Protocol
+
+The Scholar plugin can be activated through the [Obsidian Protocol](https://docs.obsidian.md/Reference/TypeScript+API/Plugin/registerObsidianProtocolHandler).
+The uri protocol base is:
+
+`obsidian://scholar`
+
+### Available Parameters
+
+The following parameters are available:
+- `command` (required)
+- `source` (optional)
+- `paper` (only required for some commands)
+
+> **Note:**  All parameters must be properly URI encoded. Use [`encodeURI()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI) to encode the URI. Use [`encodeURIComponent()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent) to encode individual components as necessary.
+
+#### command
+
+The `command` parameter tells the Obsidian Scholar plugin what action to take.
+
+This parameter is **required**.
+The parameter must be one of the supported values listed below.
+
+Supported values:
+- `createPaper` - adds a paper from the given paper data (see `paper` parameter).
+
+#### source
+
+The `source` parameter is just used to identify where (the app/plugin/etc.) the URI protocol request originated from.
+
+This parameter is **optional**.
+The parameter can be any string value.
+If you are developing an extension or external program that calls the Obsidian Scholar URI protocol, consider using a name users would recognize (such as the app's store name).
+
+#### paper
+
+The `paper` parameter is used to pass paper data to the Obsidian Scholar plugin.
+
+This parameter is **required** if the `createPaper` value of the `command` parameter is used.
+The parameter value must be a url-encoded string representation of a JSON object.
+
+- `StructuredPaperData` (object): paper data with the following fields:
+  - `title: string` - (required) Paper title
+  - `authors: string[]` - (required) List of author names, comma-delimited
+  - `abstract: string` - (required) Paper abstract
+  - `url: string` - (optional) The URL where the paper can be found (used to link to the online version of the paper)
+  - `venue: string` - (optional) The venue the paper was published in (conference proceedings, journal, book, etc.)
+  - `publicationDate: string` - (optional) The date the paper was published
+  - `bibtex: string` - (optional) A string in [bibtex citation format](https://www.bibtex.com/g/bibtex-format/).
+  - `pdfUrl: string` - (optional) The URL where the PDF can be found at. Do not include if the PDF is access restricted.
+  - `citekey: string` - (optional) The key from the bibtex citation.
+
+> **Note:** Several of the fields in `StructuredPaperData` are not URL safe, and must be further encoded. Some of the individual field values (such as the `url` and `bibtex`) must be encoded with [`encodeURIComponent()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent).
+
+**Example encoding:**
+```javascript
+// The paper data object.
+let paperData = {
+  title = "Attention Is All You Need",
+  authors = "Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, Illia Polosukhin",
+  abstract = "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks in an encoder-decoder configuration. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.",
+  url = "https://arxiv.org/abs/1706.03762",
+  venue = "31st Conference on Neural Information Processing Systems (NIPS 2017)",
+  publicationData = "2023",
+  bibtex = "@misc{vaswani2023attentionneed,\ntitle={Attention Is All You Need},\nauthor={Ashish Vaswani and Noam Shazeer and Niki Parmar and Jakob Uszkoreit and Llion Jones and Aidan N. Gomez and Lukasz Kaiser and Illia Polosukhin},\nyear={2023},\neprint={1706.03762},\narchivePrefix={arXiv},\nprimaryClass={cs.CL},\nurl={https://arxiv.org/abs/1706.03762},\n}",
+  pdfurl = "https://arxiv.org/pdf/1706.03762",
+  citekey = "vaswani2023attentionneed"
+};
+
+// Encode each individual field with encodeURIComponent().
+Object.keys(paperData).forEach((key) => {
+    paperData[key] = encodeURIComponent(paperData[key]);
+});
+
+// Create the final URI by encoding the entire JSON string.
+let appName = "My App Name";
+let jsonString = JSON.stringify(paperData);
+let url = encodeURI(`obsidian://scholar?command=createPaper&paper=${jsonString}&source=${appName}`);
+```
