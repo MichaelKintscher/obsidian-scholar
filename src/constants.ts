@@ -102,6 +102,7 @@ export const FILE_ALREADY_EXISTS = "Unable to create note. File already exists. 
 export const NOTICE_SEARCH_BIBTEX_NOT_FOUND = "The BibTeX for this paper is not found. You might search the bibtext file manually.";
 export const NOTICE_SEARCH_BIBTEX_ERROR = "The BibTeX for this paper is not found. You might search the bibtext file manually.";
 export const NOTICE_SEARCH_BIBTEX_COPIED = "The BibTeX of this paper is copied to the clipboard.";
+export const URI_PROTOCOL_ERROR = "There was a problem handling the incoming URI protocol. Check the Obsidian console for details."
 
 // TEMPLATE
 export const NOTE_FRONTMATTER_DEFAULT = `title: "{{title}}"

@@ -40,6 +40,7 @@ import {
 	NOTICE_SEARCH_BIBTEX_COPIED,
 	NOTICE_PAPER_NOTE_DOWNLOAD_ERROR,
 	NOTICE_DOWNLOADING_S2,
+	URI_PROTOCOL_ERROR,
 } from "./constants";
 import { isValidUrl, getSystemPathSeparator } from "./utility";
 import {
@@ -49,11 +50,7 @@ import {
 } from "./settingsTab";
 import { ObsidianScholar } from "./obsidianScholar";
 import { ObsidianScholarApi } from "./obsidianScholarApi";
-
-interface CreatePaperParameters {
-	paper: StructuredPaperData;
-	source: string;
-}
+import { parseProtocolParameters, ObsidianScholarUriParameters } from "./uriProtocol";
 
 // Main Plugin Entry Point
 export default class ObsidianScholarPlugin extends Plugin {
@@ -228,49 +225,43 @@ export default class ObsidianScholarPlugin extends Plugin {
 			},
 		});
 
+		// Registers the custom uri scheme handler of obsidian://scholar
 		this.registerObsidianProtocolHandler("scholar", async (e) => {
 
-			// Parse the paper data from the URI encoding.
-			const paperObject = JSON.parse(e.paper);
-			Object.keys(paperObject).forEach((key) => {
-				paperObject[key] = decodeURIComponent(paperObject[key]);
-			});
+			// Parse the received URI parameters.
+			let parameters: ObsidianScholarUriParameters;
+			try {
 
-			// If the paper data does not contain all of the required fields, raise an error.
-			if (!paperObject.hasOwnProperty("title") || !paperObject.hasOwnProperty("authors") || !paperObject.hasOwnProperty("abstract")) {
-				
-				var sourceName = e.hasOwnProperty("source") ? e.source : "unkown source";
-				var missingFields =
-					paperObject.hasOwnProperty("title") ? "" : "title," +
-					paperObject.hasOwnProperty("authors") ? "" : "authors," +
-					paperObject.hasOwnProperty("abstract") ? "" : "abstract";
-				if(missingFields[missingFields.length - 1] == ",") {
-					missingFields = missingFields.substring(0, missingFields.length - 1);
-				}
-				var message = `Error - cannot import paper from "${sourceName}". Required JSON fields in "paper" parameter of URI are missing: ${missingFields}.`;
-				new Notice(`Import error from "${sourceName}" - see console for details.`);
-				console.log(message);
+				parameters = parseProtocolParameters(e);
+
+			} catch (error) {
+
+				new Notice(URI_PROTOCOL_ERROR);
+				console.error(error);
+				return;
 			}
 
-			// Create the paper data object.
-			const paperData: StructuredPaperData = {
-				title: paperObject.title,
-				authors: paperObject.authors.split(","),
-				abstract: paperObject.abstract,
-				url: paperObject.hasOwnProperty("url") ? paperObject.url : null,
-				venue: paperObject.hasOwnProperty("venue") ? paperObject.venue : null,
-				publicationDate: paperObject.hasOwnProperty("publicationDate") ? paperObject.publicationDate : null,
-				tags: paperObject.hasOwnProperty("tags") ? paperObject.tags : null,
-				bibtex: paperObject.hasOwnProperty("bibtex") ? paperObject.bibtex : null,
-				pdfPath: paperObject.hasOwnProperty("pdfPath") ? paperObject.pdfPath : null,
-				pdfUrl: paperObject.hasOwnProperty("pdfUrl") ? paperObject.pdfUrl : null,
-				citekey: paperObject.hasOwnProperty("citekey") ? paperObject.citekey : null,
-			};
-			console.log(paperData);
+			// Process the received command.
+			if (parameters.command == "createPaper") {
 
-			// Show a notice to the user and create the paper note.
-			new Notice(`Importing "${paperData.title}" from ${e.source}...`);
-			this.api.createPaperNoteFromPaperData(paperData);
+				// Verify the paper data is present.
+				if (parameters.paper == undefined) {
+					new Notice(URI_PROTOCOL_ERROR);
+					console.error(`Cannot import paper from "${parameters.source}". Required URI parameter "paper" is missing.`);
+					return;
+				}
+				//console.log(parameters.paper);
+
+				// Show a notice to the user and create the paper note.
+				new Notice(`Importing "${parameters.paper.title}" from ${parameters.source}...`);
+				this.api.createPaperNoteFromPaperData(parameters.paper);
+
+			} else {
+
+				// No command matched.
+				new Notice(URI_PROTOCOL_ERROR);
+				console.error(`URI activation received with unrecognized command. Value "${parameters.command}" is not supported.`);
+			}
 		});
 
 		this.addSettingTab(new ObsidianScholarSettingTab(this.app, this));
