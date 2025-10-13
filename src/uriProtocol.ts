@@ -1,11 +1,13 @@
 import {
-    Notice,
     ObsidianProtocolData
 } from "obsidian";
 import {
     StructuredPaperData
 } from "./paperData";
 
+/**
+ * Represents the URI parameters handled by Obsidian Scholar.
+ */
 export interface ObsidianScholarUriParameters {
     command: string;
     paper?: StructuredPaperData;
@@ -25,9 +27,9 @@ export interface ObsidianScholarUriParameters {
 
 // URI Protocol.
 /**
- * 
+ * Parses the query parameters received by Obsidian into the URI parameters for Obsidian Scholar.
  * @param data - The Obsidian Protocol Data instance.
- * @returns - The parsed URI Command Parameters.
+ * @returns - The parsed Obsidian Scholar URI Parameters.
  */
 export function	parseProtocolParameters(data: ObsidianProtocolData): ObsidianScholarUriParameters {
 
