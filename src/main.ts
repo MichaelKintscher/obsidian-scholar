@@ -148,10 +148,11 @@ export default class ObsidianScholarPlugin extends Plugin {
 					return false;
 				} else {
 					if (!checking) {
-						let paperData =
+						let paperData = this.obsidianScholar.isValidScholarPaperNote(currentFile) ?
 							this.obsidianScholar.getPaperDataFromLocalFile(
 								currentFile
-							);
+							)
+							: null;
 
 						if (paperData && paperData.url) {
 							fetchSemanticScholarPaperReferences(
@@ -359,7 +360,8 @@ class paperSearchModal extends SuggestModal<PaperSearchModelResult> {
 
 		this.localPaperData = this.app.vault
 			.getMarkdownFiles()
-			.filter((file) => file.path.startsWith(this.settings.NoteLocation))
+			.filter((file) => file.path.startsWith(this.settings.NoteLocation)
+							&& this.obsidianScholar.isValidScholarPaperNote(file))
 			.map((file, index) => {
 				return {
 					paper: this.obsidianScholar.getPaperDataFromLocalFile(file),
@@ -802,7 +804,8 @@ class paperRemoveModal extends SuggestModal<PaperSearchModelResult> {
 
 		this.localPaperData = this.app.vault
 			.getMarkdownFiles()
-			.filter((file) => file.path.startsWith(this.settings.NoteLocation))
+			.filter((file) => file.path.startsWith(this.settings.NoteLocation)
+							&& this.obsidianScholar.isValidScholarPaperNote(file))
 			.map((file, index) => {
 				return {
 					paper: this.obsidianScholar.getPaperDataFromLocalFile(file),
@@ -1178,7 +1181,8 @@ class addPaperPdfModal extends SuggestModal<PaperSearchModelResult> {
 		// Get local papers and prioritize current file
 		this.localPaperData = this.app.vault
 			.getMarkdownFiles()
-			.filter((file) => file.path.startsWith(this.settings.NoteLocation))
+			.filter((file) => file.path.startsWith(this.settings.NoteLocation)
+							&& this.obsidianScholar.isValidScholarPaperNote(file))
 			.map((file, index) => {
 				return {
 					paper: this.obsidianScholar.getPaperDataFromLocalFile(file),
@@ -1262,7 +1266,7 @@ class pdfPathInputModal extends SuggestModal<string> {
 
 		// Get existing PDF path if any
 		const noteFile = this.app.vault.getAbstractFileByPath(notePath);
-		if (noteFile && noteFile instanceof TFile) {
+		if (noteFile && noteFile instanceof TFile && this.obsidianScholar.isValidScholarPaperNote(noteFile)) {
 			const paperData = this.obsidianScholar.getPaperDataFromLocalFile(noteFile);
 			this.existingPdfPath = paperData.pdfPath || null;
 			this.paperTitle = paperData.title;

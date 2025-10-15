@@ -42,6 +42,25 @@ export class ObsidianScholar {
 		return paperData.title.replace(/[^a-zA-Z0-9 ]/g, "");
 	}
 
+	/**
+	 * Checks whether the given file is a valid Scholar paper note.
+	 * This is defined as the file having all three properties required by the StructuredPaperData interface.
+	 * @param file - the file for the note to check
+	 * @returns - whether the file has the three properties required by the StructuredPaperData interface.
+	 */
+	isValidScholarPaperNote(file: TFile): boolean {
+		// Get the file frontmatter.
+		let fileCache = this.app.metadataCache.getFileCache(file);
+		let frontmatter = fileCache?.frontmatter;
+
+		// Return whether the file has the three properties required
+		// 		by the StructuredPaperData interface.
+		return frontmatter &&
+			frontmatter.title &&
+			frontmatter.authors &&
+			frontmatter. abstract;
+	}
+
 	getPaperDataFromLocalFile(file: TFile): StructuredPaperData {
 		let fileCache = this.app.metadataCache.getFileCache(file);
 		let frontmatter = fileCache?.frontmatter;
@@ -57,7 +76,7 @@ export class ObsidianScholar {
 
 		return {
 			title: frontmatter?.title ?? file.basename,
-			authors: frontmatter?.authors.split(",") ?? [],
+			authors: frontmatter?.authors?.split(",") ?? [],
 			abstract: frontmatter?.abstract ?? null,
 			url: frontmatter?.url ?? null,
 			venue: frontmatter?.venue ?? null,
@@ -93,7 +112,8 @@ export class ObsidianScholar {
 	async getAllLocalPaperData(): Promise<StructuredPaperData[]> {
 		return this.app.vault
 			.getMarkdownFiles()
-			.filter((file) => file.path.startsWith(this.settings.NoteLocation))
+			.filter((file) => file.path.startsWith(this.settings.NoteLocation)
+							&& this.isValidScholarPaperNote(file))
 			.map((file) => {
 				return this.getPaperDataFromLocalFile(file);
 			});
@@ -164,7 +184,8 @@ export class ObsidianScholar {
 
 		const allPapersWithFiles = this.app.vault
 			.getMarkdownFiles()
-			.filter((file) => file.path.startsWith(this.settings.NoteLocation))
+			.filter((file) => file.path.startsWith(this.settings.NoteLocation)
+							&& this.isValidScholarPaperNote(file))
 			.map((file) => ({
 				paperData: this.getPaperDataFromLocalFile(file),
 				file: file,
@@ -275,6 +296,11 @@ export class ObsidianScholar {
 	async getPaperBibtex(file: TFile | string): Promise<string | undefined> {
 		if (typeof file === "string") {
 			file = this.app.vault.getAbstractFileByPath(file) as TFile;
+		}
+
+		// Verify the paper data is valid.
+		if (this.isValidScholarPaperNote(file) == false) {
+			return undefined;
 		}
 
 		let paperData = this.getPaperDataFromLocalFile(file);
@@ -460,7 +486,8 @@ export class ObsidianScholar {
 		let pdfPath = "";
 		if (
 			currentFile.extension == "md" &&
-			this.isFileInNoteLocation(currentFile)
+			this.isFileInNoteLocation(currentFile) &&
+			this.isValidScholarPaperNote(currentFile)
 		) {
 			let paperData = this.getPaperDataFromLocalFile(currentFile);
 			if (paperData.pdfPath) {
@@ -561,6 +588,10 @@ export class ObsidianScholar {
 				let noteFile = this.app.vault.getAbstractFileByPath(pathToFile);
 				if (noteFile == null || !(noteFile instanceof TFile)) {
 					new Notice("Note file not found.");
+					return;
+				}
+				if (this.isValidScholarPaperNote(noteFile) == false) {
+					new Notice("Given file is not a Scholar paper note.");
 					return;
 				}
 
@@ -752,6 +783,9 @@ export class ObsidianScholar {
 			let noteFile = this.app.vault.getAbstractFileByPath(notePath);
 			if (noteFile == null || !(noteFile instanceof TFile)) {
 				throw new Error("Note file not found.");
+			}
+			if (this.isValidScholarPaperNote(noteFile) == false) {
+				throw new Error("Given file is not a Scholar paper note.");
 			}
 
 			let paperData = this.getPaperDataFromLocalFile(noteFile);
